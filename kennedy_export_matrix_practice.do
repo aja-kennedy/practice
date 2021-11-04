@@ -6,7 +6,7 @@ clear all
 set more off
 
 local excel_date "10_27_2021" //to later name files with today's date
-local excel "https://tufts.app.box.com/folder/149287416514" //to save in my Git Folder on Box
+local excel "/Users/ajakennedy/Box/Git Folder" //to save in my Git Folder on Box
 
 sysuse auto, clear //read in example data set
 
