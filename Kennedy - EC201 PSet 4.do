@@ -6,7 +6,7 @@ clear all // clear stata memory
 set obs 10000 // create 10,000 observations
 set seed 10232013 // generate a random(ish) sequence for the observations
 capture log close
-log using "/Users/ajakennedy/Box/Git Folder/Kennedy_EC201PSet5.log", replace
+log using "/Users/ajakennedy/Box/Git Folder/Kennedy_EC201PSet4.log", replace
 
 
 //PART A

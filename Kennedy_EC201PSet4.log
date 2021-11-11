@@ -1,15 +1,14 @@
------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
        log:  /Users/ajakennedy/Box/Git Folder/Kennedy_EC201PSet4.log
   log type:  text
- opened on:   9 Nov 2021, 22:10:22
+ opened on:  11 Nov 2021, 00:11:36
 
 . 
 . 
 . //PART A
 . 
-. gen health_cost = rnormal(9000,3000) // healthcare costs distributed normal
-> ly (9000, 3000)
+. gen health_cost = rnormal(9000,3000) // healthcare costs distributed normally (9000, 3000)
 
 . 
 . // PART B - WHO OPTS INTO INSURANCE IN ROUND ONE?
@@ -21,13 +20,11 @@
 
 . scalar mean1 = r(mean) // health insurance premium in round one
 
-. gen optin_round1 = cond(health_cost + penalty > mean1,1,0) // binary variab
-> le indicating whether someone opts into insurance in round 1
+. gen optin_round1 = cond(health_cost + penalty > mean1,1,0) // binary variable indicating whether someone opts into insurance in round 1
 
 . qui sum optin_round1
 
-. scalar share1 = r(mean) // share of population who opts into health insuran
-> ce in round one
+. scalar share1 = r(mean) // share of population who opts into health insurance in round one
 
 . 
 . di mean1 // health insurance premium in round one
@@ -41,15 +38,12 @@
 . 
 . foreach i in 1 2 {
   2.         
-.         qui summ health_cost if optin_round`i'==1 // summarize health costs
->  of people insured in the previous round
+.         qui summ health_cost if optin_round`i'==1 // summarize health costs of people insured in the previous round
   3.         local i =`i'+1 // redefine i, add one
   4.         scalar mean`i' = r(mean) // health insurance premium this round
-  5.         gen optin_round`i' = cond(health_cost + penalty > mean`i',1,0) /
-> / indicator for opting into insurance this round
+  5.         gen optin_round`i' = cond(health_cost + penalty > mean`i',1,0) // indicator for opting into insurance this round
   6.         qui sum optin_round`i'
-  7.         scalar share`i' = r(mean) // share of population opting into ins
-> urance this round
+  7.         scalar share`i' = r(mean) // share of population opting into insurance this round
   8.         
 . }
 
@@ -69,8 +63,7 @@
 
 . 
 . 
-. //PART D,E - WHAT IF THERE IS A $500 PENALTY FOR NOT HAVING HEALTH INSURANC
-> E?
+. //PART D,E - WHAT IF THERE IS A $500 PENALTY FOR NOT HAVING HEALTH INSURANCE?
 . //Same code as above, rerun with $500 penalty applied:
 . 
 . scalar penalty = 500
@@ -78,26 +71,21 @@
 . drop optin_round1 optin_round2 optin_round3
 
 . 
-. gen optin_round1 = cond(health_cost + penalty > mean1,1,0) // binary variab
-> le indicating whether someone opts into insurance in round 1
+. gen optin_round1 = cond(health_cost + penalty > mean1,1,0) // binary variable indicating whether someone opts into insurance in round 1
 
 . qui sum optin_round1
 
-. scalar share1 = r(mean) // share of population who opts into health insuran
-> ce in round 1
+. scalar share1 = r(mean) // share of population who opts into health insurance in round 1
 
 . 
 . foreach i in 1 2 {
   2.         
-.         qui summ health_cost if optin_round`i'==1 // summarize health costs
->  of people insured in the previous round
+.         qui summ health_cost if optin_round`i'==1 // summarize health costs of people insured in the previous round
   3.         local i =`i'+1 // redefine i, add one
   4.         scalar mean`i' = r(mean) // health insurance premium this round
-  5.         gen optin_round`i' = cond(health_cost + penalty > mean`i',1,0) /
-> / indicator for opting into insurance this round
+  5.         gen optin_round`i' = cond(health_cost + penalty > mean`i',1,0) // indicator for opting into insurance this round
   6.         qui sum optin_round`i'
-  7.         scalar share`i' = r(mean) // share of population opting into ins
-> urance this round
+  7.         scalar share`i' = r(mean) // share of population opting into insurance this round
   8.         
 . }
 
@@ -117,11 +105,9 @@
 11101.453
 
 . 
-. *In order to maintain the same number of insured individuals in rounds 1 an
-> d 2:
+. *In order to maintain the same number of insured individuals in rounds 1 and 2:
 . 
-. di mean2 - mean1 + penalty // penalty needed in year 2 to maintain same lev
-> el of participation as year 1
+. di mean2 - mean1 + penalty // penalty needed in year 2 to maintain same level of participation as year 1
 2584.7654
 
 . 
@@ -152,26 +138,21 @@
 
 . 
 . 
-. gen optin_round1 = cond(health_cost + penalty > mean1,1,0) // binary variab
-> le indicating whether someone opts into insurance in round 1
+. gen optin_round1 = cond(health_cost + penalty > mean1,1,0) // binary variable indicating whether someone opts into insurance in round 1
 
 . qui sum optin_round1
 
-. scalar share1 = r(mean) // share of population who opts into health insuran
-> ce in round 1
+. scalar share1 = r(mean) // share of population who opts into health insurance in round 1
 
 . 
 . foreach i in 1 2 {
   2.         
-.         qui summ health_cost if optin_round`i'==1 // summarize health costs
->  of people insured in the previous round
+.         qui summ health_cost if optin_round`i'==1 // summarize health costs of people insured in the previous round
   3.         local i =`i'+1 // redefine i, add one
   4.         scalar mean`i' = r(mean) // health insurance premium this round
-  5.         gen optin_round`i' = cond(health_cost + penalty > mean`i',1,0) /
-> / indicator for opting into insurance this round
+  5.         gen optin_round`i' = cond(health_cost + penalty > mean`i',1,0) // indicator for opting into insurance this round
   6.         qui sum optin_round`i'
-  7.         scalar share`i' = r(mean) // share of population opting into ins
-> urance this round
+  7.         scalar share`i' = r(mean) // share of population opting into insurance this round
   8.         
 . }
 
@@ -196,8 +177,7 @@
 .2638
 
 . 
-. di mean2 - mean1 + penalty // penalty needed in year 2 to maintain the same
->  level of insurance participation as year 1
+. di mean2 - mean1 + penalty // penalty needed in year 2 to maintain the same level of insurance participation as year 1
 2788.3155
 
 . 
@@ -205,5 +185,5 @@
       name:  <unnamed>
        log:  /Users/ajakennedy/Box/Git Folder/Kennedy_EC201PSet4.log
   log type:  text
- closed on:   9 Nov 2021, 22:10:22
------------------------------------------------------------------------------
+ closed on:  11 Nov 2021, 00:11:36
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
