@@ -12,9 +12,11 @@ set more off
 set memory 10m
 set seed 11162021
 program drop _all
+capture log close
 
 cd "/Users/ajakennedy/Box/Git Folder"
 insheet using "families.txt", clear
+log using Kennedy_EC201PSet5.log, replace
 
 *commands: sample, simulate
 
@@ -93,9 +95,7 @@ ssc install cdfplot
 cdfplot income_mean, norm
 
 *find number of 95% confidence intervals that contain the population target
-gen ci_dummy = income mean_pop >= income_ci_95_l & income_mean_pop <= income_ci_95_h
-qui sum ci_dummy
-di r(mean)*100 // number of confidence intervals that contain the population target
+count if income_mean_pop >= income_ci_95_l & income_mean_pop <= income_ci_95_h // number of confidence intervals that contain the population target
 
 *repeat when sample size = 100
 
@@ -122,7 +122,7 @@ ssc install cdfplot
 cdfplot income_mean, norm
 
 *find number of 95% confidence intervals that contain the population target
-count if income mean_pop >= income_ci_95_l & income_mean_pop <= income_ci_95_h
+count if income_mean_pop >= income_ci_95_l & income_mean_pop <= income_ci_95_h
 
 **PART C - sample size 500, compare incomes of the 3 family types by comparing histograms and boxplots
 
@@ -165,20 +165,10 @@ di r(mean)-z95*sqrt(r(Var)/r(N)) r(mean)+z95*sqrt(r(Var)/r(N)) // confidence int
 *sample
 use families, clear
 sample 100, by(region) count
-scalar sample_size = 100
-
-foreach i of numlist 1/4 {
-	count if region == `i'
-	scalar prop_`i' = r(N)/sample_size
-	qui sum income if region == `i'
-	scalar mean_`i' = r(mean)
-	scalar se_`i' = sqrt(r(Var)/r(N))
-	scalar c95_`i'_l = r(mean)-z95*sqrt(r(Var)/r(N))
-	scalar c95_`i'_h = r(mean)+z95*sqrt(r(Var)/r(N))
-	scalar sum_`i' = mean_`i'*prop_`i'
-}
 
 qui sum income 
 di r(mean) // point estimate
 di sqrt(r(Var)/r(N)) // standard error of estimate
 di r(mean)-z95*sqrt(r(Var)/r(N)) r(mean)+z95*sqrt(r(Var)/r(N)) // confidence interval
+
+log close

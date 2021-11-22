@@ -1,0 +1,294 @@
+-----------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/ajakennedy/Box/Git Folder/Kennedy_EC201PSet5.log
+  log type:  text
+ opened on:  21 Nov 2021, 19:51:43
+
+. 
+. *commands: sample, simulate
+. 
+. *PART A - parameter estimates, standard error, 95% confidence interval
+. 
+. *generate binary variables
+. gen female_fam = type==3 // female-headed families
+
+. gen no_hs = education <39 // head of household without hs diploma
+
+. 
+. *save as a temp file to recall later
+. save "families.dta", replace
+file families.dta saved
+
+. 
+. *save this t score as a scalar:
+. scalar z95 = invnormal(0.975)
+
+. 
+. *save the population mean as a scalar (to use later)
+. qui sum income
+
+. scalar income_mean_pop = r(mean)
+
+. 
+. *save a scalar to easily change sample size in program we will run
+. *local sample_size 500
+. 
+. **PART A - generate parameter estimates and 95% confidence intervials for:
+. *proportion of female-headed families
+. *average number of children per family
+. *proportion of households that did not recieve HS diploma
+. *average family income
+. 
+. program define part_a, rclass
+  1. 
+.         use families, clear
+  2.         sample 500, count
+  3. 
+.         foreach x in female_fam children no_hs income {
+  4.                 qui sum `x', detail
+  5.                 scalar `x'_mean = r(mean) // parameter estimate
+  6.                 scalar `x'_ci_95_l = r(mean)-z95*sqrt(r(Var)/r(N)) // lo
+> wer bound of 95% confidence interval
+  7.                 scalar `x'_ci_95_h = r(mean)+z95*sqrt(r(Var)/r(N)) // up
+> per bound of 95% confidence interval
+  8.                 scalar `x'_sd = r(sd) // standard deviation
+  9.         
+.         }
+ 10.         
+. end
+
+. 
+. simulate ///
+>         female_fam_mean=female_fam_mean female_fam_ci_95_l=female_fam_ci_95
+> _l   female_fam_ci_95_h=female_fam_ci_95_h ///
+>         children_mean=children_mean             children_ci_95_l=children_c
+> i_95_l               children_ci_95_h=children_ci_95_h ///
+>         no_hs_mean=no_hs_mean                   no_hs_ci_95_l=no_hs_ci_95_l
+>                      no_hs_ci_95_h=no_hs_ci_95_h ///
+>         income_mean=income_mean                 income_ci_95_l=income_ci_95
+> _l                   income_ci_95_h=income_ci_95_h ///
+>         , reps(5): part_a
+
+         Command: part_a
+ female_fam_mean: female_fam_mean
+female_fam_ci_~l: female_fam_ci_95_l
+female_fam_ci_~h: female_fam_ci_95_h
+   children_mean: children_mean
+children_ci_95_l: children_ci_95_l
+children_ci_95_h: children_ci_95_h
+      no_hs_mean: no_hs_mean
+   no_hs_ci_95_l: no_hs_ci_95_l
+   no_hs_ci_95_h: no_hs_ci_95_h
+     income_mean: income_mean
+  income_ci_95_l: income_ci_95_l
+  income_ci_95_h: income_ci_95_h
+
+Simulations (5)
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+.....
+
+. 
+. 
+. **PART B - 100 samples of size 400
+. 
+. program define part_b, rclass
+  1. 
+.         use families, clear
+  2.         sample 400, count
+  3.         qui sum income, detail
+  4.         scalar income_mean = r(mean) // parameter estimate
+  5.         scalar income_95_l = r(mean)-z95*sqrt(r(Var)/r(N)) // lower boun
+> d of 95% confidence interval
+  6.         scalar income_ci_95_h = r(mean)+z95*sqrt(r(Var)/r(N)) // upper b
+> ound of 95% confidence interval
+  7.         scalar income_sd = sqrt(r(Var)/r(N)) // standard error
+  8.         
+. end
+
+. 
+. *simulate mean, standard error, 95% confidence intervals
+. simulate income_mean=income_mean income_sd=income_sd income_95_l income_ci_
+> 95_h, reps(100): part_b
+
+       Command: part_b
+   income_mean: income_mean
+     income_sd: income_sd
+        _sim_3: income_95_l
+        _sim_4: income_ci_95_h
+
+Simulations (100)
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+..................................................    50
+..................................................   100
+
+. 
+. *histogram of the 100 estimates, normal density plot superimposed
+. histogram income_mean, normal
+(bin=10, start=37823.582, width=853.8125)
+
+. histogram income_sd, normal
+(bin=10, start=1344.3881, width=43.992529)
+
+. 
+. *empirical cumulative distribution function, normal density plot superimpos
+> ed
+. ssc install cdfplot
+checking cdfplot consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. cdfplot income_mean, norm
+(0 observations deleted)
+
+. 
+. *find number of 95% confidence intervals that contain the population target
+. count if income_mean_pop >= income_ci_95_l & income_mean_pop <= income_ci_9
+> 5_h // number of confidence intervals that contain the population target
+  100
+
+. 
+. *repeat when sample size = 100
+. 
+. program define part_b2, rclass
+  1. 
+.         use families, clear
+  2.         sample 100, count
+  3.         qui sum income, detail
+  4.         scalar income_mean = r(mean) // parameter estimate
+  5.         scalar income_95_l = r(mean)-z95*sqrt(r(Var)/r(N)) // lower boun
+> d of 95% confidence interval
+  6.         scalar income_ci_95_h = r(mean)+z95*sqrt(r(Var)/r(N)) // upper b
+> ound of 95% confidence interval
+  7.         scalar income_sd = sqrt(r(Var)/r(N)) // standard error
+  8.         
+. end
+
+. 
+. simulate income_mean=income_mean income_sd=income_sd income_95_l income_ci_
+> 95_h, reps(100): part_b2
+
+       Command: part_b2
+   income_mean: income_mean
+     income_sd: income_sd
+        _sim_3: income_95_l
+        _sim_4: income_ci_95_h
+
+Simulations (100)
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+..................................................    50
+..................................................   100
+
+. 
+. *histogram of the 100 estimates, normal density plot superimposed
+. histogram income_mean, normal
+(bin=10, start=33173.34, width=1624.793)
+
+. histogram income_sd, normal
+(bin=10, start=2055.6448, width=223.01292)
+
+. 
+. *empirical cumulative distribution function, normal density plot superimpos
+> ed
+. ssc install cdfplot
+checking cdfplot consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. cdfplot income_mean, norm
+(0 observations deleted)
+
+. 
+. *find number of 95% confidence intervals that contain the population target
+. count if income_mean_pop >= income_ci_95_l & income_mean_pop <= income_ci_9
+> 5_h
+  0
+
+. 
+. **PART C - sample size 500, compare incomes of the 3 family types by compar
+> ing histograms and boxplots
+. 
+. use families, clear
+
+. sample 500, count
+(43,386 observations deleted)
+
+. 
+. graph box income, over(type)
+
+. 
+. foreach i of numlist 1/3 {
+  2.         histogram income if type==`i'
+  3. }
+(bin=18, start=500, width=10149.944)
+(bin=5, start=9360, width=12735.2)
+(bin=10, start=0, width=8434.3)
+
+. 
+. **PART D - sample size 400 from each of the four regions
+. 
+. use families, clear
+
+. sample 400, by(region) count
+(42,286 observations deleted)
+
+. 
+. *parallel boxplots: income, family size, education level
+. 
+. foreach j in income persons education {
+  2.         graph box `j', over(region)
+  3. }
+
+. 
+. **PART E - simple random sample size 400
+. 
+. use families, clear
+
+. sample 400, count
+(43,486 observations deleted)
+
+. 
+. *do households led by someone with no high school diploma earn less that ho
+> useholds led by someone with a high school diploma?
+. 
+. graph box income, over(no_hs)
+
+. 
+. **PART F - stratification
+. 
+. qui sum income 
+
+. di r(mean) // point estimate
+41318.825
+
+. di sqrt(r(Var)/r(N)) // standard error of estimate
+1660.8624
+
+. di r(mean)-z95*sqrt(r(Var)/r(N)) r(mean)+z95*sqrt(r(Var)/r(N)) // confidenc
+> e interval
+38063.59444574.056
+
+. 
+. *sample
+. use families, clear
+
+. sample 100, by(region) count
+(43,486 observations deleted)
+
+. 
+. qui sum income 
+
+. di r(mean) // point estimate
+39396.57
+
+. di sqrt(r(Var)/r(N)) // standard error of estimate
+1526.7716
+
+. di r(mean)-z95*sqrt(r(Var)/r(N)) r(mean)+z95*sqrt(r(Var)/r(N)) // confidenc
+> e interval
+36404.15342388.987
+
+. 
+. log close
+      name:  <unnamed>
+       log:  /Users/ajakennedy/Box/Git Folder/Kennedy_EC201PSet5.log
+  log type:  text
+ closed on:  21 Nov 2021, 19:52:03
+-----------------------------------------------------------------------------
