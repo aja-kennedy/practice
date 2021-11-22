@@ -178,8 +178,6 @@ foreach i of numlist 1/4 {
 	scalar sum_`i' = mean_`i'*prop_`i'
 }
 
-di sum_1 + sum_2 + sum_3 + sum_4
-
 qui sum income 
 di r(mean) // point estimate
 di sqrt(r(Var)/r(N)) // standard error of estimate
