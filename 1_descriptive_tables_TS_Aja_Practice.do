@@ -58,9 +58,11 @@ local temp "E:\METCO\data\temp\"
 ***REPLICATION OF SIMS DESCRIPTIVE STATS USING TS-SIMS MATCHED DATA**
 ********************************************************************************
 
+*SWITCHES
 local create_simsts = 0 // = 1 recreates SIMS-TS file that matches the merge file to SIMS data.
 *we need to fix this match and also pull in the non-sasid unique data as well!
-local simsts_table = 1 // =1 creates summary table of SIMS-TS matched data
+local simsts_table = 0 // =1 creates summary table of SIMS-TS matched data
+local ts_outcomes = 1 // run code to generate ts outcome variables
 
 if `create_simsts' == 1 {
 
@@ -175,7 +177,7 @@ export excel using "${tables}/`tablesfile'.xlsx", sheet("desc_r_SIMSTSmatch") sh
 
 } // end simsts_table switch
 
-STOP (to create error message)
+di "`bline_nontest_chars'"
 
 *Compare to original SIMS descriptive stats to see if this lines up or if there are major changes
 *(Review with Dr. Setren)
@@ -185,18 +187,122 @@ For exploration of TS data:
 voterbase_id is the unique identifier in TargetSmart data
 there is only one observation per individual in TS data
 *******************/
-*Do we want summary status of all raw TargetSmart data as well?
 
-*create some locals categorizing different variables of interest:
+/*
+TS OUTCOMES OF INTEREST:
+
+Political affiliation (i.e., Democrat or Republican)
+Likelihood of registering to vote
+Voter participation (i.e., frequency of voting, voting in local elections)
+Likelihood of donating to candidates of color and/or PACs focused on issues/policies affecting people of color - FEC but we also have TS data for this and we might want to check it for accuracy
+
+Likelihood of living in a diverse neighborhood as an adult ---- neighborhood traits come from Census, may need to be merged in but are already merged to SIMS - we’re going to be able to do this much finer by addresses
+
+Occupational diversity - TS but we need to merge in occupational information data
+Wages and income - TS and labor data - Evan going to work on labor data
+
+Renting/buying a home - in TS
+Housing value - in TS
+
+Credit worthiness - in TS
+Student loan debt - in TS - I don't see this info in TS
+*/
+
+/*
+*CREATING LOCALS TO CATEGORIZE DIFFERENT VARIABLES OF INTEREST:
+
 local ts_demog "vbtsmart_dob vbvoterbase_age vbvoterbase_dob vbvoterbase_gender vbvoterbase_race vbvoterbase_marital_status vbvf_race vbvf_dob vbvf_yob vbvf_age vbvoterbase_deceased_flag"
 local ts_address "vbtsmart_city vbtsmart_zip vbtsmart_state vbtsmart_address_usps_addre vbvf_source_state vbvf_county_code vbvf_county_name"
 local ts_votinginfo "vbvoterbase_registration_status vbvf_voter_status vbvf_registration_date vbvf_earliest_registration_date vbvf_party"
-local ts_votinginfo "`ts_voting info' vbvf_pp2008 vbvf_pp2012 vbvf_pp2016 vbvf_pp2020 vbvf_pp2008_party vbvf_pp2012_party vbvf_pp2016_party vbvf_pp2020_party"
+
+*voting locals -- If we need to create these for some reason we can use a loop to name them
+local general_elections "vbvf_g2000 vbvf_g2001 vbvf_g2002 vbvf_g2003 vbvf_g2004 vbvf_g2005 vbvf_g2006 vbvf_g2007 vbvf_g2008 vbvf_g2009 vbvf_g2010 vbvf_g2011 vbvf_g2012 vbvf_g2013"
+local primary_elections "vbvf_p2000
+local municipal_elections "vbvf_m2000
+local presidential_primary "vbvf_pp2000 vbvf_pp2004 vbvf_pp2008 vbvf_pp2012 vbvf_pp2016 vbvf_pp2020"
+local presidential_primary_party "vbvf_pp2000_party vbvf_pp2004_party vbvf_pp2008_party vbvf_pp2012_party vbvf_pp2016_party vbvf_pp2020_party"
+*/
 
 *TargetSmart raw data:
+
+if `ts_outcomes'==1 {
+
 use E:\METCO\data\raw_data\targetsmart\tsmart_nber_ma_analytic_install_prev_addresses_20191004\tsmart_nber_ma_analytic_install_prev_addresses_20191004.dta, clear
-*Why does this data have zero observations for many variables?
-*I think I need to destring the variables or something.
+
+**VOTING OUTCOMES**
+*outcomes for 2020 are missing
+
+*Indicator for registered voter
+gen registered_voter=vbvoterbase_registration_status=="Registered" // no missing values
+
+*Indicator for active voter
+gen active_voter=vbvf_voter_status=="Active"
+replace active_voter=. if missing(vbvf_voter_status) // should I replace missing values?
+
+*Frequency of voting
+
+*generating indicators for voting in general, primary, municipal, and presidential primary elections
+*raw data codes various outcomes for individuals who voted, the rest are blank
+
+forvalues i = 2000/2020 {
+	gen voted_general`i' = vbvf_g`i'!="" // voting history for general elections
+	gen voted_primary`i' = vbvf_p`i'!="" // voting history for primary elections
+	gen voted_municipal`i' = vbvf_m`i'!="" // voting history for municipal elections
+}
+
+**this loop throws an error, but it seems to be working
+forvalues i = 2000(4)2020 { // presidential election years
+	gen voted_presidential_primary`i' = vbvf_pp`i'!="" // voting history for presidential primary
+}
+
+*number of each type of election in which the individual voted
+foreach name in general primary municipal presidential_primary{
+	egen `name'_frequency = rowtotal(voted_`name'*)
+}
+
+*variable that records number of elections in which someone voted
+egen all_elections_frequency = rowtotal(voted_general* voted_primary* voted_municipal* voted_presidential_primary*) 
+
+*generating indicators for voting in a particular party in a presidential primary election
+*party outcomes are D(Democrat), R(Republican), G(Green), I(Independent), L(Libertarian), N(No Party Preference), O(Other Party), U(Unknown)
+forvalues i = 2000(4)2020 {
+	gen dem_`i' = vbvf_pp`i'_party=="D" // outcomes are D,R,G,I,L, many observations are blank
+	gen rep_`i' = vbvf_pp`i'_party=="R"
+	gen other_`i' = vbvf_pp`i'_party!="D" & vbvf_pp`i'_party!="R" vbvf_pp`i'_party!=""
+}
+
+
+*Indicators for party affiliation
+gen registered_dem = vbvf_party=="Democrat"
+gen registered_rep = vbvf_party == "Republican"
+gen registered_other = vbvf_party!="Democrat" & vbvf_party!="Republican" & vbvf_party!=""
+
+*donations
+*tbpol_cons_high_val_dd_hh//demi decile conservative high value donor
+
+*HOUSING AND CREDIT OUTCOMES
+gen homeowner = vbhomeowner_indicator=="Y" // codebook doesn't define outcomes (Y,N,U)
+
+*tbira_keogh_decile - propensity to have IRA/401K retirement plan (scale of 1-10)
+*tbbusiness_owner_flg - 1 or missing
+*vbhome_purchase_price - in $1k increments 
+*vbmortgage_amount - in $1k increments
+*vbloan_to_value_ratio - mortgage/home value ratio
+*vbhome_value_amount - in $1k increments
+*vbhome_equity_amount - in $1k increments
+*vbhousehold_net_worth - outcomes are letters, each assigned to a dollar range in ascending order, defined in codebook
+*vbhousehold_income_amount - in $1k increments
+*tbita_index - credit worthiness, 1-350
+
+*EDUCATION AND LABOR
+
+*vboccupation
+*vbeducation // this and variable below intend to record the same info. this one has fewer missing values
+*tbeducation_cd
+
+} // end ts_outcomes switch
+
+STOP to generate error message
 
 *keep variables of interest
 keep voterbase_id `ts_demog' `ts_address' `ts_votinginfo'
